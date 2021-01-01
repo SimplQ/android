@@ -1,6 +1,7 @@
 package me.simplq;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,9 +19,14 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.messaging.FirebaseMessaging;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import me.simplq.pojo.Queue;
+
 public class MainActivity extends AppCompatActivity {
     EditText txtQueueId;
-    Button btnEnableSms;
+    Button btnRefresh;
     private View mLayout;
     private static final int PERMISSION_REQUEST_SMS = 0;
     // Todo Remove the logs
@@ -34,17 +40,18 @@ public class MainActivity extends AppCompatActivity {
         mLayout = findViewById(android.R.id.content);
 
         txtQueueId = (EditText) findViewById(R.id.txtQueueId);
-        btnEnableSms = (Button) findViewById(R.id.btnEnableSms);
+        btnRefresh = (Button) findViewById(R.id.btnEnableSms);
 
-        btnEnableSms.setOnClickListener(v -> {
-            String queueId = txtQueueId.getText().toString();
-            if (queueId.length() > 0)
-                registerQueue(queueId);
-            else
-                Toast.makeText(getBaseContext(), R.string.prompt_queue_id,
-                        Toast.LENGTH_SHORT).show();
-        });
+        btnRefresh.setOnClickListener(v -> BackendService.enqueueWork(this, BackendService.class, BackendService.FETCH_QUEUES_JOB_ID, new Intent()));
 
+        List<Queue> queues = (ArrayList<Queue>) getIntent().getSerializableExtra("QUEUES");
+        if (queues != null) {
+            String queueList = "";
+            for (int i = 0; i < queues.size(); i++) {
+                queueList.concat(queues.get(i).getName() + " ");
+            }
+            Snackbar.make(mLayout, queueList, Snackbar.LENGTH_SHORT).show();
+        }
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS)
                 == PackageManager.PERMISSION_GRANTED) {
             // Permission is already available
