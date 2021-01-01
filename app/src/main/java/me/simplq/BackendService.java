@@ -6,7 +6,6 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.app.JobIntentService;
 
-import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -26,6 +25,8 @@ import me.simplq.pojo.Queue;
 
 public class BackendService extends JobIntentService {
     private static final String BASE_URL = "https://devbackend.simplq.me/v1";
+    public static final String NEW_QUEUES_KEY = "QUEUES";
+    public static final String UPDATE_QUEUES_ACTION = "UpdateQueuesAction";
     private RequestQueue requestQueue;
     private static final String TAG = "BackendService";
     public static final int FETCH_QUEUES_JOB_ID = 0;
@@ -36,7 +37,7 @@ public class BackendService extends JobIntentService {
         requestQueue = Volley.newRequestQueue(this);
     }
 
-    public void fetchQueues() {
+    public void fetchQueues(Intent workIntent) {
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, BASE_URL + "/queues", null, new Response.Listener<JSONObject>() {
             @Override
@@ -54,20 +55,18 @@ public class BackendService extends JobIntentService {
                     Log.e(TAG, e.getMessage());
                     queues.add(new Queue("json-parse-error", "json-parse-error"));
                 }
-                Intent update = new Intent(getBaseContext(), MainActivity.class);
-                update.putExtra("QUEUES", queues);
-                startActivity(update);
+                broadcastUpdateQueues(queues);
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Log.e(TAG, error.getMessage());
+                throw new RuntimeException(error);
             }
         }) {
             @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> params = new HashMap<String, String>();
-                params.put("Authorization", "Bearer anonymous");
+            public Map<String, String> getHeaders() {
+                Map<String, String> params = new HashMap<>();
+                params.put("Authorization", "Bearer " + LoginActivity.getIdToken());
                 return params;
             }
         };
@@ -77,6 +76,16 @@ public class BackendService extends JobIntentService {
 
     @Override
     protected void onHandleWork(@NonNull Intent workIntent) {
-        fetchQueues();
+        fetchQueues(workIntent);
+    }
+
+    /**
+     * https://stackoverflow.com/questions/25332078/how-to-the-send-data-to-the-activity-from-background-service
+     */
+    private void broadcastUpdateQueues(ArrayList<Queue> queues) {
+        Intent broadcastIntent = new Intent();
+        broadcastIntent.setAction(UPDATE_QUEUES_ACTION);
+        broadcastIntent.putExtra(NEW_QUEUES_KEY, queues);
+        sendBroadcast(broadcastIntent);
     }
 }
