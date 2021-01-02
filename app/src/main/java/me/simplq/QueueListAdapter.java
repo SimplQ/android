@@ -1,6 +1,8 @@
 package me.simplq;
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -55,8 +57,9 @@ public class QueueListAdapter extends BaseAdapter implements ListAdapter {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //do something
-
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://simplq.me/queue/" + list.get(position).getId()));
+                context.startActivity(browserIntent);
             }
         });
 
