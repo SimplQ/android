@@ -105,7 +105,7 @@ public class BackendService extends JobIntentService {
 
     private void updateSmsStatus() {
         StringRequest
-                stringRequest = new StringRequest(Request.Method.GET, Uri.parse(BASE_URL).buildUpon().appendPath("/me/status").appendQueryParameter("deviceId", MessagingService.fetchToken()).build().toString(),
+                stringRequest = new StringRequest(Request.Method.GET, Uri.parse(BASE_URL + "/me/status").buildUpon().appendQueryParameter("deviceId", MessagingService.fetchToken()).build().toString(),
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
@@ -129,7 +129,7 @@ public class BackendService extends JobIntentService {
 
     private void updateDeviceRegistration(String newToken) {
         StringRequest
-                stringRequest = new StringRequest(Request.Method.PUT, Uri.parse(BASE_URL).buildUpon().appendPath("/me/link").appendQueryParameter("deviceId", newToken).build().toString(),
+                stringRequest = new StringRequest(Request.Method.PUT, Uri.parse(BASE_URL + "/me/link").buildUpon().appendQueryParameter("deviceId", newToken).build().toString(),
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
