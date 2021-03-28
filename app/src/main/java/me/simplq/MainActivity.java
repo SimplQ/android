@@ -16,6 +16,11 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import com.auth0.android.Auth0;
+import com.auth0.android.authentication.AuthenticationException;
+import com.auth0.android.callback.Callback;
+import com.auth0.android.provider.WebAuthProvider;
+import com.auth0.android.result.Credentials;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
@@ -26,6 +31,7 @@ import me.simplq.pojo.Queue;
 public class MainActivity extends AppCompatActivity {
     Button btnRefresh;
     Button btnToggleSms;
+    Button btnLogin;
     ListView listView;
     private View mLayout;
     private static final int PERMISSION_REQUEST_SMS = 0;
@@ -33,12 +39,26 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "TO_REMOVE";
     private BroadcastReceiver serviceReceiver;
     private boolean smsEnabled = false;
+    private Auth0 account;
+    private String accessToken;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Set up the account object with the Auth0 application details
+        // todo avoid hardcoding the values for clientId and domain.  Instead, use String Resources,
+        //  such as @string/com_auth0_domain, to define the values.
+        account = new Auth0(
+                "9BAywifjAy6n0sx8WbuQubMGGjofpwd6",
+                "simplq.us.auth0.com"
+        );
+
         setContentView(R.layout.activity_main);
         mLayout = findViewById(android.R.id.content);
+
+        btnLogin = (Button) findViewById(R.id.btnAuth0Login);
+        btnLogin.setOnClickListener(v -> loginWithBrowser());
 
         btnRefresh = (Button) findViewById(R.id.btnRefresh);
         btnRefresh.setOnClickListener(v -> refresh());
@@ -83,6 +103,30 @@ public class MainActivity extends AppCompatActivity {
         registerReceiver(serviceReceiver, new IntentFilter(BackendService.UPDATE_SMS_STATUS_ACTION));
 
         refresh();
+    }
+
+    private void loginWithBrowser() {
+        // Setup the WebAuthProvider, using the custom scheme and scope.
+
+        WebAuthProvider.login(account)
+                .withScheme("demo")
+                .withScope("openid profile email")
+                // Launch the authentication passing the callback where the results will be received
+                .start(this, new Callback<Credentials, AuthenticationException>() {
+                    // Called when there is an authentication failure
+                    @Override
+                    public void onFailure(AuthenticationException exception) {
+                        // Something went wrong!
+                    }
+
+                    // Called when authentication completed successfully
+                    @Override
+                    public void onSuccess(Credentials credentials) {
+                        // Get the access token from the credentials object.
+                        // This can be used to call APIs
+                        accessToken = credentials.getAccessToken();
+                    }
+                });
     }
 
     private void requestSmsPermission() {
