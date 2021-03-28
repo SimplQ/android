@@ -42,7 +42,6 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:26.2.0')
     implementation 'com.google.firebase:firebase-messaging'
     implementation 'com.google.firebase:firebase-analytics'
-    implementation 'com.google.android.gms:play-services-auth:19.0.0'
     implementation 'com.android.volley:volley:1.1.1'
     // Add the Auth0 Android SDK
     implementation 'com.auth0.android:auth0:2.+'

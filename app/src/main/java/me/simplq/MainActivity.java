@@ -29,9 +29,13 @@ import java.util.List;
 import me.simplq.pojo.Queue;
 
 public class MainActivity extends AppCompatActivity {
+    // Set to null if user not signed in.
+    private Auth0 account;
+    private static String accessToken;
+    Button btnLogin;
+
     Button btnRefresh;
     Button btnToggleSms;
-    Button btnLogin;
     ListView listView;
     private View mLayout;
     private static final int PERMISSION_REQUEST_SMS = 0;
@@ -39,23 +43,21 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "TO_REMOVE";
     private BroadcastReceiver serviceReceiver;
     private boolean smsEnabled = false;
-    private Auth0 account;
-    private String accessToken;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        setContentView(R.layout.activity_main);
+        mLayout = findViewById(android.R.id.content);
+
         // Set up the account object with the Auth0 application details
         // todo avoid hardcoding the values for clientId and domain.  Instead, use String Resources,
         //  such as @string/com_auth0_domain, to define the values.
         account = new Auth0(
-                "9BAywifjAy6n0sx8WbuQubMGGjofpwd6",
-                "simplq.us.auth0.com"
+                getString(R.string.com_auth0_client_id),
+                getString(R.string.com_auth0_domain)
         );
-
-        setContentView(R.layout.activity_main);
-        mLayout = findViewById(android.R.id.content);
 
         btnLogin = (Button) findViewById(R.id.btnAuth0Login);
         btnLogin.setOnClickListener(v -> loginWithBrowser());
@@ -101,8 +103,6 @@ public class MainActivity extends AppCompatActivity {
         };
         registerReceiver(serviceReceiver, new IntentFilter(BackendService.UPDATE_QUEUES_ACTION));
         registerReceiver(serviceReceiver, new IntentFilter(BackendService.UPDATE_SMS_STATUS_ACTION));
-
-        refresh();
     }
 
     private void loginWithBrowser() {
@@ -110,13 +110,15 @@ public class MainActivity extends AppCompatActivity {
 
         WebAuthProvider.login(account)
                 .withScheme("demo")
-                .withScope("openid profile email")
+                .withScope("read:current_user update:current_user_metadata")
+                .withAudience("https://devbackend.simplq.me/v1")
                 // Launch the authentication passing the callback where the results will be received
                 .start(this, new Callback<Credentials, AuthenticationException>() {
                     // Called when there is an authentication failure
                     @Override
                     public void onFailure(AuthenticationException exception) {
                         // Something went wrong!
+                        throw exception;
                     }
 
                     // Called when authentication completed successfully
@@ -125,8 +127,13 @@ public class MainActivity extends AppCompatActivity {
                         // Get the access token from the credentials object.
                         // This can be used to call APIs
                         accessToken = credentials.getAccessToken();
+                        refresh();
                     }
                 });
+    }
+
+    public static String getIdToken() {
+        return accessToken;
     }
 
     private void requestSmsPermission() {
